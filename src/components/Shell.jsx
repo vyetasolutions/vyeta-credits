@@ -30,7 +30,7 @@ export default function Shell({ children }) {
               <div className="h-2.5 w-2.5 rounded-full bg-mint-400 animate-pulseRing absolute" />
               <div className="h-2.5 w-2.5 rounded-full bg-mint-400 relative" />
             </div>
-            <span className="font-display font-semibold text-ink-100 tracking-tight">Kwacha Credits</span>
+            <span className="font-display font-semibold text-ink-100 tracking-tight">Vyeta Credits</span>
           </div>
           <button
             onClick={() => navigate("/contacts")}
