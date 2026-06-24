@@ -32,13 +32,28 @@ export default function Shell({ children }) {
             </div>
             <span className="font-display font-semibold text-ink-100 tracking-tight">Vyeta Credits</span>
           </div>
-          <button
-            onClick={() => navigate("/contacts")}
-            className="h-9 w-9 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center font-display text-xs text-violet-300"
-            title={profile?.full_name}
-          >
-            {initials(profile?.full_name)}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/contacts")}
+              className="h-9 w-9 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center font-display text-xs text-violet-300"
+              title={profile?.full_name}
+            >
+              {initials(profile?.full_name)}
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm("Sign out of Vyeta Credits?")) signOut();
+              }}
+              className="h-9 w-9 rounded-full bg-base-800 border border-base-700 flex items-center justify-center text-ink-400 hover:text-flame-400 hover:border-flame-500/40 transition-colors"
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5 stroke-current" strokeWidth="1.8">
+                <path d="M15 17v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 12h11m0 0-3-3m3 3-3 3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -63,13 +78,6 @@ export default function Shell({ children }) {
           })}
         </div>
       </nav>
-
-      <button
-        onClick={signOut}
-        className="hidden md:block fixed top-4 right-4 text-xs text-ink-500 hover:text-ink-300"
-      >
-        Sign out
-      </button>
     </div>
   );
 }
