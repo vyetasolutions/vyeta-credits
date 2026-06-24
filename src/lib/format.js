@@ -1,8 +1,8 @@
 // Mock conversion rate: 1 Credit = 0.42 ZMW (display-only, not real money)
 export const ZMW_RATE = 0.42;
 
-export function creditsToZmw(credits) {
-  return (Number(credits) * ZMW_RATE).toFixed(2);
+export function creditsToZmw(credits, rate) {
+  return (Number(credits) * Number(rate)).toFixed(2);
 }
 
 export function formatCredits(value) {
