@@ -50,7 +50,7 @@ export default function Dashboard() {
           <span className="text-base text-ink-500 ml-1.5">CR</span>
         </p>
         <p className="text-sm text-ink-500 mt-1">
-          ≈ K{profile ? creditsToZmw(profile.balance) : "0.00"}{" "}
+          ≈ K{profile ? creditsToZmw(profile.balance, zmwRate) : "0.00"}{" "}
           <span className="text-ink-700">(Today's Rate)</span>
         </p>
 
