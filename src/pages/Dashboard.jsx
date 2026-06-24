@@ -51,7 +51,7 @@ export default function Dashboard() {
         </p>
         <p className="text-sm text-ink-500 mt-1">
           ≈ K{profile ? creditsToZmw(profile.balance) : "0.00"}{" "}
-          <span className="text-ink-700">(mock rate)</span>
+          <span className="text-ink-700">(Today's Rate)</span>
         </p>
 
         <div className="flex gap-3 mt-5">
