@@ -27,7 +27,7 @@ export default function Login() {
             <div className="h-3 w-3 rounded-full bg-mint-400" />
           </div>
           <h1 className="font-display text-2xl font-semibold text-ink-100">Welcome back</h1>
-          <p className="text-sm text-ink-500 mt-1.5">Sign in to your Kwacha Credits wallet</p>
+          <p className="text-sm text-ink-500 mt-1.5">Sign in to your Vyeta Credits wallet</p>
         </div>
 
         <Card>
