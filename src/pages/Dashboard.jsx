@@ -7,7 +7,7 @@ import TransactionRow from "../components/TransactionRow.jsx";
 import { formatCredits, creditsToZmw } from "../lib/format.js";
 
 export default function Dashboard() {
-  const { profile, session } = useAuth();
+  const { profile, session, zmwRate } = useAuth();
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
 
