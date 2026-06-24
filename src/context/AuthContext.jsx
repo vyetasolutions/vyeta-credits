@@ -7,6 +7,29 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [zmwRate, setZmwRate] = useState(0.42); // fallback until fetched
+
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "zmw_rate")
+      .single()
+      .then(({ data }) => {
+        if (data) setZmwRate(Number(data.value));
+      });
+
+    const channel = supabase
+      .channel("app-settings-rate")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "app_settings", filter: "key=eq.zmw_rate" },
+        (payload) => setZmwRate(Number(payload.new.value))
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const fetchProfile = useCallback(async (userId) => {
     if (!userId) {
@@ -73,7 +96,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, profile, loading, signUp, signIn, signOut, refreshProfile }}
+      value={{ session, profile, loading, signUp, signIn, signOut, refreshProfile, zmwRate }}
     >
       {children}
     </AuthContext.Provider>
