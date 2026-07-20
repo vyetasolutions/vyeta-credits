@@ -295,4 +295,3 @@ function ManageUserModal({ user, onClose, onDone }) {
     </div>
   );
 }
-PAYMENTS
