@@ -24,19 +24,19 @@ export default function Shell({ children }) {
       {/* Header */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-base-950/85 border-b border-base-700/60">
         <div className="max-w-md mx-auto w-full flex items-center justify-between px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="relative h-7 w-7 rounded-lg bg-mint-500/20 flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative h-7 w-7 rounded-lg bg-mint-500/20 flex items-center justify-center shrink-0">
               <div className="h-2.5 w-2.5 rounded-full bg-mint-400 animate-pulseRing absolute opacity-60" />
               <div className="h-2.5 w-2.5 rounded-full bg-mint-400 relative" />
             </div>
-            <span className="font-display font-semibold text-ink-100 tracking-tight">Vyeta Credits</span>
+            <span className="font-display font-semibold text-ink-100 tracking-tight whitespace-nowrap truncate">Vyeta Credits</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Avatar → goes to contacts */}
             <Link
               to="/contacts"
-              className={`h-9 w-9 rounded-full border flex items-center justify-center font-display text-xs transition-colors border-violet-500/30 ${avatarColor(profile?.full_name)}`}
+              className={`h-11 w-11 rounded-full border flex items-center justify-center font-display text-xs transition-colors border-violet-500/30 ${avatarColor(profile?.full_name)}`}
               title={profile?.full_name}
             >
               {initials(profile?.full_name)}
@@ -45,7 +45,7 @@ export default function Shell({ children }) {
             {/* Sign out */}
             <button
               onClick={() => { if (window.confirm("Sign out of Vyeta Credits?")) signOut(); }}
-              className="h-9 w-9 rounded-full bg-base-800 border border-base-700 flex items-center justify-center text-ink-500 hover:text-flame-400 hover:border-flame-500/40 transition-colors"
+              className="h-11 w-11 rounded-full bg-base-800 border border-base-700 flex items-center justify-center text-ink-500 hover:text-flame-400 hover:border-flame-500/40 transition-colors"
               aria-label="Sign out"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
@@ -59,8 +59,11 @@ export default function Shell({ children }) {
 
       <main className="flex-1 max-w-md mx-auto w-full px-4 pb-28 pt-5">{children}</main>
 
-      {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-base-700/60 bg-base-900/95 backdrop-blur-lg">
+      {/* Bottom nav — pb includes safe-area-inset for iPhones with a home indicator */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-20 border-t border-base-700/60 bg-base-900/95 backdrop-blur-lg"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <div className="max-w-md mx-auto flex items-stretch">
           {navItems.map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
@@ -68,7 +71,7 @@ export default function Shell({ children }) {
               <Link
                 key={to}
                 to={to}
-                className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors relative ${active ? "text-mint-400" : "text-ink-700 hover:text-ink-400"}`}
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-[52px] text-[10px] font-medium transition-colors relative ${active ? "text-mint-400" : "text-ink-700 hover:text-ink-400"}`}
               >
                 {active && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-6 bg-mint-400 rounded-full" />
@@ -104,3 +107,4 @@ function InsightsIcon({ active }) {
 function ShieldIcon({ active }) {
   return <svg viewBox="0 0 24 24" fill="none" className={s(active)} strokeWidth="1.8"><path d="M12 3.5 5 6v6c0 4 3 7 7 8.5C16 19 19 16 19 12V6l-7-2.5Z" strokeLinecap="round" strokeLinejoin="round" /><path d="M9.5 12l1.8 1.8L14.5 10" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
+

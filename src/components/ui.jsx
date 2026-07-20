@@ -1,5 +1,4 @@
 import React from "react";
-
 export function Card({ children, className = "" }) {
   return (
     <div className={`rounded-xl2 border border-base-700 bg-base-850 shadow-card p-5 ${className}`}>
@@ -7,9 +6,8 @@ export function Card({ children, className = "" }) {
     </div>
   );
 }
-
 export function Button({ children, variant = "primary", size = "md", className = "", ...props }) {
-  const base = "w-full font-display font-semibold transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2";
+  const base = "w-full font-display font-semibold transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2 min-h-[44px]";
   const sizes = {
     sm: "py-2.5 px-4 rounded-xl text-xs",
     md: "py-3.5 px-5 rounded-xl text-sm",
@@ -28,13 +26,14 @@ export function Button({ children, variant = "primary", size = "md", className =
     </button>
   );
 }
-
 export function Input({ label, error, hint, className = "", ...props }) {
   return (
     <label className="block">
       {label && <span className="block text-xs font-medium text-ink-500 mb-1.5">{label}</span>}
       <input
-        className={`w-full bg-base-800 border ${error ? "border-flame-500/60" : "border-base-600"} rounded-xl px-4 py-3 text-sm text-ink-100 placeholder:text-ink-700 focus:border-violet-500 outline-none transition-colors ${className}`}
+        // text-base (16px) is deliberate: anything smaller triggers iOS Safari's
+        // auto-zoom-on-focus, which is jarring on a mobile-first app.
+        className={`w-full bg-base-800 border ${error ? "border-flame-500/60" : "border-base-600"} rounded-xl px-4 py-3 text-base text-ink-100 placeholder:text-ink-700 focus:border-violet-500 outline-none transition-colors ${className}`}
         {...props}
       />
       {hint && !error && <span className="block text-xs text-ink-700 mt-1.5">{hint}</span>}
@@ -42,7 +41,6 @@ export function Input({ label, error, hint, className = "", ...props }) {
     </label>
   );
 }
-
 export function Pill({ children, tone = "neutral" }) {
   const tones = {
     neutral: "bg-base-700 text-ink-300",
@@ -57,7 +55,6 @@ export function Pill({ children, tone = "neutral" }) {
     </span>
   );
 }
-
 export function Divider({ label }) {
   return (
     <div className="flex items-center gap-3">
@@ -67,7 +64,6 @@ export function Divider({ label }) {
     </div>
   );
 }
-
 export function Badge({ children, className = "" }) {
   return (
     <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold bg-flame-500 text-white ${className}`}>
@@ -75,3 +71,4 @@ export function Badge({ children, className = "" }) {
     </span>
   );
 }
+

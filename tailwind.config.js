@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   darkMode: "class",
@@ -25,7 +24,7 @@ export default {
         amber: { 400: "#FFB547", 500: "#FF9F1C" },
       },
       fontFamily: {
-        display: ["Space Grotesk", "sans-serif"],
+        display: ["Sora", "sans-serif"],
         body: ["Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
@@ -68,3 +67,4 @@ export default {
   },
   plugins: [],
 };
+
