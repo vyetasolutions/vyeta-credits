@@ -6,7 +6,6 @@ import { Card, Button, Pill } from "../components/ui.jsx";
 import TransactionRow from "../components/TransactionRow.jsx";
 import { SkeletonBalance, SkeletonCard } from "../components/Skeleton.jsx";
 import { formatCredits, formatDate } from "../lib/format.js";
-import LinkedPlatforms from "../components/LinkedPlatforms.jsx";
 
 export default function Dashboard() {
   const { profile, session } = useAuth();
@@ -158,9 +157,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Linked platforms */}
-      <LinkedPlatforms />
-
       {/* Recent activity */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -185,4 +181,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
