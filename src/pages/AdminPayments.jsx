@@ -11,6 +11,7 @@ const PLATFORM_LABELS = {
 };
 
 function platformLabel(p) {
+  if (!p) return "Wallet top-up";
   return PLATFORM_LABELS[p] || p;
 }
 
@@ -92,7 +93,9 @@ export default function AdminPayments() {
           payments.map((p) => {
             const meta = p.metadata || {};
             const label =
-              meta.type === "subscription" || p.purpose?.includes("subscription")
+              p.purpose === "wallet_topup"
+                ? "Wallet credit load"
+                : meta.type === "subscription" || p.purpose?.includes("subscription")
                 ? `${meta.tier || meta.plan || ""} subscription`.trim()
                 : meta.points_to_add
                 ? `${Number(meta.points_to_add).toLocaleString()} points top-up`
@@ -105,7 +108,7 @@ export default function AdminPayments() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <Pill tone="violet">{platformLabel(p.platform)}</Pill>
                       <p className="text-sm font-semibold text-ink-100 truncate">
-                        {meta.business_name || meta.organization_name || p.external_ref}
+                        {meta.business_name || meta.organization_name || p.payer_full_name || p.payer_email || p.external_ref}
                       </p>
                     </div>
                     <p className="text-xs text-ink-500 capitalize">{label}</p>
