@@ -5,10 +5,10 @@ import { supabase } from "../lib/supabaseClient.js";
 import { Card, Button, Pill } from "../components/ui.jsx";
 import TransactionRow from "../components/TransactionRow.jsx";
 import { SkeletonBalance, SkeletonCard } from "../components/Skeleton.jsx";
-import { formatCredits, creditsToZmw, formatDate, formatRate } from "../lib/format.js";
+import { formatCredits, formatDate } from "../lib/format.js";
 
 export default function Dashboard() {
-  const { profile, session, zmwRate, rateUpdatedAt } = useAuth();
+  const { profile, session } = useAuth();
   const navigate = useNavigate();
   const [recent, setRecent] = useState([]);
   const [activeSubs, setActiveSubs] = useState([]);
@@ -60,8 +60,6 @@ export default function Dashboard() {
     return () => { active = false; supabase.removeChannel(ch); };
   }, [session?.user?.id]);
 
-  const { forward, inverse } = formatRate(zmwRate);
-
   return (
     <div className="space-y-5">
       {/* Balance card */}
@@ -76,19 +74,16 @@ export default function Dashboard() {
             <span className="text-base text-ink-500 ml-2 font-normal">CR</span>
           </p>
 
-          {/* Exchange rate display — bidirectional */}
+          {/* 1 CR = 1 ZMW, structurally - just show the split between
+              spendable-only bonus CR and real-money top-up CR */}
           <div className="flex items-center gap-1.5 mt-2">
             <span className="text-xs text-ink-500">
-              ≈ K{creditsToZmw(profile.balance, zmwRate)}
-            </span>
-            <span className="text-[10px] text-ink-700">·</span>
-            <span className="text-[11px] text-ink-700">
-              1 CR = K{forward} · K1 = {inverse} CR
+              K{formatCredits(profile.cashable_balance ?? 0)} available to load out
             </span>
           </div>
-          {rateUpdatedAt && (
-            <p className="text-[10px] text-ink-700 mt-0.5">
-              Rate updated {formatDate(rateUpdatedAt)}
+          {Number(profile.balance) > Number(profile.cashable_balance ?? 0) && (
+            <p className="text-[11px] text-ink-700 mt-0.5">
+              Remaining {formatCredits(Number(profile.balance) - Number(profile.cashable_balance ?? 0))} CR is bonus/promotional — spendable across Vyeta, not withdrawable.
             </p>
           )}
 
@@ -101,8 +96,18 @@ export default function Dashboard() {
                 Send credits
               </Button>
             </Link>
-            <Link to="/services" className="flex-1">
-              <Button variant="secondary" size="md">Services</Button>
+            <Link to="/load-credits" className="flex-1">
+              <Button variant="secondary" size="md">
+                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
+                  <path d="M10 3v14M4 9l6-6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Load credits
+              </Button>
+            </Link>
+          </div>
+          <div className="mt-3">
+            <Link to="/services" className="block">
+              <Button variant="ghost" size="sm">Browse Services</Button>
             </Link>
           </div>
         </div>
@@ -176,3 +181,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
