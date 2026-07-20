@@ -9,8 +9,8 @@ export function zmwToCredits(zmw, rate) {
 
 export function formatRate(rate) {
   const r = Number(rate);
-  const inverse = r > 0 ? (1 / r).toFixed(4) : "—";
-  return { forward: r.toFixed(4), inverse };
+  const inverse = r > 0 ? (1 / r).toFixed(2) : "—";
+  return { forward: r.toFixed(2), inverse };
 }
 
 export function formatCredits(value) {
