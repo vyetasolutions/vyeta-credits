@@ -20,6 +20,9 @@ export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
+  const [rateInput, setRateInput] = useState("");
+  const [rateBusy, setRateBusy] = useState(false);
+
   const [treasuryBusy, setTreasuryBusy] = useState(false);
 
   async function loadUsers() {
@@ -64,6 +67,17 @@ export default function Admin() {
     loadPendingPaymentsCount();
   }, [query]);
 
+  async function updateRate() {
+    const val = Number(rateInput);
+    if (!val || val <= 0) { toast("Enter a valid rate greater than 0.", "warning"); return; }
+    setRateBusy(true);
+    const { error } = await supabase.rpc("admin_set_rate", { p_rate: val });
+    setRateBusy(false);
+    if (error) { toast(error.message, "error"); return; }
+    toast(`Exchange rate updated to ${val}`, "success");
+    setRateInput("");
+  }
+
   async function setTreasuryAccount(userId) {
     setTreasuryBusy(true);
     const { error } = await supabase.rpc("admin_set_treasury", { p_user_id: userId });
@@ -78,9 +92,9 @@ export default function Admin() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl font-semibold text-ink-100">Admin panel</h1>
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate min-w-0">Admin panel</h1>
+        <div className="flex items-center gap-4 shrink-0">
           <Link to="/admin/payments" className="text-xs text-mint-400 font-medium flex items-center gap-1.5">
             Payments
             {pendingPaymentsCount > 0 && (
@@ -108,14 +122,28 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Exchange rate — fixed, no longer admin-editable */}
+      {/* Exchange rate */}
       <Card>
         <p className="text-xs text-ink-500 uppercase tracking-widest mb-3">Exchange rate</p>
         <div className="flex items-baseline gap-2 mb-1">
           <span className="font-mono text-2xl font-semibold text-ink-100">1 CR = K{forward}</span>
         </div>
         <p className="text-xs text-ink-500 mb-1">K1 = {inverse} CR</p>
-        <p className="text-[11px] text-ink-700 mt-2">Fixed at 1 CR = 1 ZMW. No longer adjustable, now that credits are cash-backed and redeemable.</p>
+        {rateUpdatedAt && <p className="text-[11px] text-ink-700 mb-4">Last updated {formatDate(rateUpdatedAt)}</p>}
+        <div className="flex gap-3">
+          <Input
+            type="number"
+            step="0.0001"
+            min="0.0001"
+            placeholder={`Current: ${forward}`}
+            value={rateInput}
+            onChange={(e) => setRateInput(e.target.value)}
+          />
+          <Button className="!w-auto px-5" disabled={rateBusy || !rateInput} onClick={updateRate}>
+            {rateBusy ? "…" : "Update"}
+          </Button>
+        </div>
+        <p className="text-[11px] text-ink-700 mt-2">Updates instantly for all signed-in users via Realtime.</p>
       </Card>
 
       {/* Treasury */}

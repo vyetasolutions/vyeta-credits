@@ -123,7 +123,7 @@ export default function Services() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink-100">Vyeta Services</h1>
+        <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate">Vyeta Services</h1>
         <p className="text-sm text-ink-500 mt-1">Pay for Vyeta services directly from your credit balance.</p>
       </div>
 
@@ -226,3 +226,4 @@ export default function Services() {
     </div>
   );
 }
+

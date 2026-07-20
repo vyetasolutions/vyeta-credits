@@ -4,12 +4,10 @@ import { supabase } from "../lib/supabaseClient.js";
 import { Card } from "../components/ui.jsx";
 import { SkeletonCard } from "../components/Skeleton.jsx";
 import { formatCredits, initials, avatarColor } from "../lib/format.js";
-
 export default function Analytics() {
   const { session } = useAuth();
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!session?.user?.id) return;
     supabase
@@ -18,12 +16,10 @@ export default function Analytics() {
       .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
       .then(({ data }) => { setTxs(data || []); setLoading(false); });
   }, [session?.user?.id]);
-
   const stats = useMemo(() => {
     const myId = session.user.id;
     let totalSent = 0, totalReceived = 0, totalFees = 0;
     const contactMap = {};
-
     txs.forEach((tx) => {
       if (tx.sender_id === myId) {
         totalSent += Number(tx.amount);
@@ -36,19 +32,14 @@ export default function Analytics() {
         contactMap[key] = (contactMap[key] || 0) + Number(tx.amount);
       }
     });
-
     const topContacts = Object.entries(contactMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
     return { totalSent, totalReceived, totalFees, topContacts, count: txs.length };
   }, [txs, session.user.id]);
-
-  if (loading) return <div className="space-y-5"><h1 className="font-display text-xl font-semibold text-ink-100">Insights</h1><SkeletonCard rows={3} /></div>;
-
+  if (loading) return <div className="space-y-5"><h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate">Insights</h1><SkeletonCard rows={3} /></div>;
   const maxContact = stats.topContacts[0]?.[1] || 1;
-
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-xl font-semibold text-ink-100">Insights</h1>
-
+      <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate">Insights</h1>
       <div className="grid grid-cols-2 gap-3">
         {[
           { label: "Total sent", value: stats.totalSent, color: "text-ink-100" },
@@ -64,7 +55,6 @@ export default function Analytics() {
           </Card>
         ))}
       </div>
-
       {stats.topContacts.length > 0 && (
         <div>
           <h2 className="font-display text-sm font-semibold text-ink-100 mb-3">Top contacts</h2>
@@ -96,3 +86,4 @@ export default function Analytics() {
     </div>
   );
 }
+
