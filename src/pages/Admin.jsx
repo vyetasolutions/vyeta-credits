@@ -18,12 +18,11 @@ export default function Admin() {
   const [stats, setStats] = useState({ totalCredits: 0, totalUsers: 0 });
   const [treasury, setTreasury] = useState(null);
   const [admins, setAdmins] = useState([]);
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
-  // Exchange rate
   const [rateInput, setRateInput] = useState("");
   const [rateBusy, setRateBusy] = useState(false);
 
-  // Treasury
   const [treasuryBusy, setTreasuryBusy] = useState(false);
 
   async function loadUsers() {
@@ -54,10 +53,18 @@ export default function Admin() {
     setAdmins(al || []);
   }
 
+  async function loadPendingPaymentsCount() {
+    const { count } = await supabase
+      .from("pending_manual_payments")
+      .select("*", { count: "exact", head: true });
+    setPendingPaymentsCount(count || 0);
+  }
+
   useEffect(() => {
     loadUsers();
     loadLogs();
     loadTreasury();
+    loadPendingPaymentsCount();
   }, [query]);
 
   async function updateRate() {
@@ -87,9 +94,20 @@ export default function Admin() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-xl font-semibold text-ink-100">Admin panel</h1>
-        <Link to="/admin/services" className="text-xs text-violet-400 font-medium">
-          Services →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/admin/payments" className="text-xs text-mint-400 font-medium flex items-center gap-1.5">
+            Payments
+            {pendingPaymentsCount > 0 && (
+              <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-[10px] font-bold bg-flame-500 text-white">
+                {pendingPaymentsCount}
+              </span>
+            )}
+            {" →"}
+          </Link>
+          <Link to="/admin/services" className="text-xs text-violet-400 font-medium">
+            Services →
+          </Link>
+        </div>
       </div>
 
       {/* Circulation stats */}
@@ -277,3 +295,4 @@ function ManageUserModal({ user, onClose, onDone }) {
     </div>
   );
 }
+
