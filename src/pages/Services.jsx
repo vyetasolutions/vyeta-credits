@@ -105,15 +105,6 @@ export default function Services() {
     load();
   }
 
-  async function handleCancel(subId) {
-    setBusyId(subId);
-    const { error } = await supabase.rpc("cancel_subscription", { p_subscription_id: subId });
-    setBusyId(null);
-    if (error) { toast(error.message, "error"); return; }
-    toast("Subscription cancelled.", "info");
-    load();
-  }
-
   const categories = catalog.reduce((acc, svc) => {
     if (!acc[svc.category]) acc[svc.category] = [];
     acc[svc.category].push(svc);
@@ -153,29 +144,22 @@ export default function Services() {
                     </div>
 
                     <div className="mt-4">
-                      {active ? (
-                        <div className="flex items-center justify-between">
-                          <Pill tone="mint">
-                            Active{svc.billing_interval !== "one_time" && active.current_period_end
-                              ? ` · renews ${formatDate(active.current_period_end)}` : ""}
-                          </Pill>
-                          <button
-                            onClick={() => handleCancel(active.id)}
-                            disabled={busyId === active.id}
-                            className="text-xs text-flame-400 font-medium disabled:opacity-40"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                      {svc.coming_soon ? (
+                        <Pill tone="violet">Coming soon</Pill>
+                      ) : active ? (
+                        <Pill tone="mint">
+                          Active{svc.billing_interval !== "one_time" && active.current_period_end
+                            ? ` · renews ${formatDate(active.current_period_end)}` : ""}
+                        </Pill>
                       ) : (
                         <Button
                           disabled={busyId === svc.id || insufficient}
                           onClick={() => handleSubscribe(svc.id)}
                           variant={renewable ? "secondary" : "primary"}
-                        >
-                          {busyId === svc.id
-                            ? "Processing…"
-                            : renewable
+                      >
+                        {busyId === svc.id
+                          ? "Processing…"
+                          : renewable
                             ? `Renew · ${formatCredits(svc.price)} CR`
                             : `Subscribe · ${formatCredits(svc.price)} CR`}
                         </Button>
@@ -226,4 +210,3 @@ export default function Services() {
     </div>
   );
 }
-
