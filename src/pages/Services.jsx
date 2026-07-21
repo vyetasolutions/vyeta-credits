@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useToast } from "../context/ToastContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
-import { Card, Button, Pill } from "../components/ui.jsx";
+import { Card } from "../components/ui.jsx";
 import { SkeletonCard } from "../components/Skeleton.jsx";
-import { formatCredits, formatDate, billingLabel } from "../lib/format.js";
 
 // Custom line icons matching the app's hand-drawn nav icon style
 // (viewBox 24x24, strokeWidth 1.8, currentColor)
@@ -59,152 +56,55 @@ function PartnerIcon({ iconKey, className }) {
 }
 
 export default function Services() {
-  const { session, profile, refreshProfile } = useAuth();
-  const { toast } = useToast();
-  const [catalog, setCatalog] = useState([]);
-  const [mySubs, setMySubs] = useState([]);
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState(null);
 
-  async function load() {
-    const [{ data: services }, { data: subs }, { data: links }] = await Promise.all([
-      supabase.from("services").select("*").eq("is_active", true).order("category"),
-      supabase.from("subscriptions_view").select("*").eq("user_id", session.user.id).order("started_at", { ascending: false }),
-      supabase.from("partner_links").select("*").eq("is_active", true).order("sort_order"),
-    ]);
-    setCatalog(services || []);
-    setMySubs(subs || []);
-    setPartners(links || []);
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
-
-  function activeSubFor(serviceId) {
-    return mySubs.find(
-      (s) => s.service_id === serviceId && s.status === "active" &&
-        (!s.current_period_end || new Date(s.current_period_end) > new Date())
-    );
-  }
-
-  function renewableSubFor(serviceId) {
-    return mySubs.find(
-      (s) => s.service_id === serviceId && s.status === "active" &&
-        s.current_period_end && new Date(s.current_period_end) <= new Date()
-    );
-  }
-
-  async function handleSubscribe(serviceId) {
-    setBusyId(serviceId);
-    const { error } = await supabase.rpc("purchase_service", { p_service_id: serviceId });
-    setBusyId(null);
-    if (error) { toast(error.message, "error"); return; }
-    toast("Subscription activated!", "success");
-    refreshProfile();
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from("partner_links")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      setPartners(data || []);
+      setLoading(false);
+    }
     load();
-  }
-
-  const categories = catalog.reduce((acc, svc) => {
-    if (!acc[svc.category]) acc[svc.category] = [];
-    acc[svc.category].push(svc);
-    return acc;
-  }, {});
+  }, []);
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate">Vyeta Services</h1>
-        <p className="text-sm text-ink-500 mt-1">Pay for Vyeta services directly from your credit balance.</p>
+        <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate">Vyeta Network</h1>
+        <p className="text-sm text-ink-500 mt-1">Explore the platforms in the Vyeta ecosystem.</p>
       </div>
 
-      {loading ? <SkeletonCard rows={3} /> : catalog.length === 0 ? (
-        <Card><p className="text-sm text-ink-500 text-center py-4">No services available yet.</p></Card>
+      {loading ? <SkeletonCard rows={4} /> : partners.length === 0 ? (
+        <Card><p className="text-sm text-ink-500 text-center py-4">No platforms available yet.</p></Card>
       ) : (
-        Object.entries(categories).map(([category, services]) => (
-          <div key={category}>
-            <p className="text-xs font-semibold text-ink-500 uppercase tracking-widest mb-3">{category}</p>
-            <div className="space-y-3">
-              {services.map((svc) => {
-                const active = activeSubFor(svc.id);
-                const renewable = renewableSubFor(svc.id);
-                const insufficient = profile && profile.balance < svc.price;
-
-                return (
-                  <Card key={svc.id}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display text-sm font-semibold text-ink-100">{svc.name}</h3>
-                        {svc.description && <p className="text-xs text-ink-500 mt-1">{svc.description}</p>}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-mono text-lg font-semibold text-ink-100">{formatCredits(svc.price)}</p>
-                        <p className="text-[11px] text-ink-500">{billingLabel(svc.billing_interval)}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {svc.coming_soon ? (
-                        <Pill tone="violet">Coming soon</Pill>
-                      ) : active ? (
-                        <Pill tone="mint">
-                          Active{svc.billing_interval !== "one_time" && active.current_period_end
-                            ? ` · renews ${formatDate(active.current_period_end)}` : ""}
-                        </Pill>
-                      ) : (
-                        <Button
-                          disabled={busyId === svc.id || insufficient}
-                          onClick={() => handleSubscribe(svc.id)}
-                          variant={renewable ? "secondary" : "primary"}
-                      >
-                        {busyId === svc.id
-                          ? "Processing…"
-                          : renewable
-                            ? `Renew · ${formatCredits(svc.price)} CR`
-                            : `Subscribe · ${formatCredits(svc.price)} CR`}
-                        </Button>
-                      )}
-                      {insufficient && !active && (
-                        <p className="text-[11px] text-flame-400 mt-2">
-                          Insufficient balance — you need {formatCredits(svc.price)} CR.
-                        </p>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        ))
-      )}
-
-      {partners.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-ink-500 uppercase tracking-widest mb-3">Vyeta Network</p>
-          <div className="space-y-3">
-            {partners.map((p) => (
-              <a
-                key={p.id}
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <Card className="flex items-center gap-4 hover:border-violet-500/40 transition-colors">
-                  <div className="h-11 w-11 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                    <PartnerIcon iconKey={p.icon_key} className="h-5 w-5 stroke-violet-300" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display text-sm font-semibold text-ink-100">{p.name}</h3>
-                    {p.description && <p className="text-xs text-ink-500 mt-0.5 truncate">{p.description}</p>}
-                  </div>
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-4 w-4 stroke-ink-500 shrink-0">
-                    <path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </Card>
-              </a>
-            ))}
-          </div>
+        <div className="space-y-3">
+          {partners.map((p) => (
+            
+              key={p.id}
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="flex items-center gap-4 hover:border-violet-500/40 transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <PartnerIcon iconKey={p.icon_key} className="h-5 w-5 stroke-violet-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display text-sm font-semibold text-ink-100">{p.name}</h3>
+                  {p.description && <p className="text-xs text-ink-500 mt-0.5 truncate">{p.description}</p>}
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-4 w-4 stroke-ink-500 shrink-0">
+                  <path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Card>
+            </a>
+          ))}
         </div>
       )}
     </div>
