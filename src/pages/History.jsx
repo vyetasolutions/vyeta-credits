@@ -94,18 +94,60 @@ function CatalogRow({ svc, active, renewable, insufficient, busy, onSubscribe })
   );
 }
 
+function RequestRow({ req, myId, busy, onRespond, onCancel }) {
+  const isIncoming = req.target_id === myId;
+  const otherName = isIncoming ? req.requester_name : req.target_name;
+
+  return (
+    <div className="px-5 py-3.5 border-b border-base-700/60 last:border-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-ink-100">
+            {isIncoming ? `${otherName} is requesting` : `You requested from ${otherName}`}
+          </p>
+          {req.note && <p className="text-xs text-ink-500 mt-0.5">{req.note}</p>}
+          <p className="text-[11px] text-ink-700 mt-0.5">{formatDate(req.created_at)}</p>
+        </div>
+        <p className="font-mono text-sm font-semibold text-ink-100 shrink-0">{formatCredits(req.amount)} CR</p>
+      </div>
+      <div className="mt-3">
+        {isIncoming ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="secondary" disabled={busy === req.id} onClick={() => onRespond(req.id, false)}>Decline</Button>
+            <Button disabled={busy === req.id} onClick={() => onRespond(req.id, true)}>
+              {busy === req.id ? "…" : "Pay"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <Pill tone="violet">Waiting for response</Pill>
+            <button
+              onClick={() => onCancel(req.id)}
+              disabled={busy === req.id}
+              className="text-xs text-flame-400 font-medium disabled:opacity-40"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function History() {
   const { session, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [txs, setTxs] = useState([]);
   const [subs, setSubs] = useState([]);
   const [catalog, setCatalog] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [busy, setBusy] = useState(null);
 
   async function loadAll() {
-    const [{ data: txData }, { data: subData }, { data: catalogData }] = await Promise.all([
+    const [{ data: txData }, { data: subData }, { data: catalogData }, { data: reqData }] = await Promise.all([
       supabase
         .from("transactions_view")
         .select("*")
@@ -122,10 +164,16 @@ export default function History() {
         .select("*")
         .eq("is_active", true)
         .order("category"),
+      supabase
+        .from("payment_requests_view")
+        .select("*")
+        .or(`requester_id.eq.${session.user.id},target_id.eq.${session.user.id}`)
+        .order("created_at", { ascending: false }),
     ]);
     setTxs(txData || []);
     setSubs(subData || []);
     setCatalog(catalogData || []);
+    setRequests(reqData || []);
     setLoading(false);
   }
 
@@ -143,6 +191,7 @@ export default function History() {
       .channel("history-" + session.user.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_requests" }, load)
       .subscribe();
 
     return () => { active = false; supabase.removeChannel(ch); };
@@ -167,6 +216,28 @@ export default function History() {
     loadAll();
   }
 
+  async function handleRespondRequest(requestId, approve) {
+    setBusy(requestId);
+    const { error } = await supabase.rpc("respond_to_payment_request", {
+      p_request_id: requestId,
+      p_approve: approve,
+    });
+    setBusy(null);
+    if (error) { toast(error.message, "error"); return; }
+    toast(approve ? "Payment sent." : "Request declined.", approve ? "success" : "info");
+    refreshProfile();
+    loadAll();
+  }
+
+  async function handleCancelRequest(requestId) {
+    setBusy(requestId);
+    const { error } = await supabase.rpc("cancel_payment_request", { p_request_id: requestId });
+    setBusy(null);
+    if (error) { toast(error.message, "error"); return; }
+    toast("Request cancelled.", "info");
+    loadAll();
+  }
+
   function activeSubFor(serviceId) {
     return subs.find(
       (s) => s.service_id === serviceId && s.status === "active" &&
@@ -180,6 +251,8 @@ export default function History() {
         s.current_period_end && new Date(s.current_period_end) <= new Date()
     );
   }
+
+  const pendingRequests = requests.filter((r) => r.status === "pending");
 
   const filteredTxs = filter === "services" ? [] : txs.filter((tx) => {
     if (filter === "out") return tx.sender_id === session.user.id;
@@ -202,6 +275,25 @@ export default function History() {
   return (
     <div className="space-y-5">
       <h1 className="font-display text-xl font-semibold text-ink-100">Activity</h1>
+
+      {/* Pending requests — always visible regardless of filter */}
+      {pendingRequests.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-widest mb-2">Pending requests</p>
+          <Card className="!p-0 overflow-hidden">
+            {pendingRequests.map((req) => (
+              <RequestRow
+                key={req.id}
+                req={req}
+                myId={session.user.id}
+                busy={busy}
+                onRespond={handleRespondRequest}
+                onCancel={handleCancelRequest}
+              />
+            ))}
+          </Card>
+        </div>
+      )}
 
       <div className="flex gap-2 flex-wrap">
         {FILTERS.map((f) => (
