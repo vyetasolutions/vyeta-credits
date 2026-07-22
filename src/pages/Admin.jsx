@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { Card, Button, Input, Pill } from "../components/ui.jsx";
 import { formatCredits, formatDate, initials, avatarColor, formatRate } from "../lib/format.js";
+import AdminHeader from "../components/AdminHeader.jsx";
 
 export default function Admin() {
   const { zmwRate, rateUpdatedAt } = useAuth();
@@ -92,26 +92,8 @@ export default function Admin() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-xl font-semibold text-ink-100 whitespace-nowrap truncate min-w-0">Admin panel</h1>
-        <div className="flex items-center gap-4 shrink-0">
-          <Link to="/admin/payments" className="text-xs text-mint-400 font-medium flex items-center gap-1.5">
-            Payments
-            {pendingPaymentsCount > 0 && (
-              <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-[10px] font-bold bg-flame-500 text-white">
-                {pendingPaymentsCount}
-              </span>
-            )}
-            {" →"}
-          </Link>
-          <Link to="/admin/services" className="text-xs text-violet-400 font-medium">
-            Services →
-          </Link>
-          <Link to="/admin/support" className="text-xs text-mint-400 font-medium">
-            Support →
-          </Link>
-        </div>
-      </div>
+      {/* Centralized Admin Navigation Header */}
+      <AdminHeader pendingPaymentsCount={pendingPaymentsCount} />
 
       {/* Circulation stats */}
       <div className="grid grid-cols-2 gap-3">
