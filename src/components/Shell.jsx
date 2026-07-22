@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/send", label: "Send", icon: SendIcon },
   { to: "/history", label: "Activity", icon: HistoryIcon },
-  { to: "/services", label: "Services", icon: ServicesIcon },
+  { to: "/services", label: "Network", icon: ServicesIcon },
   { to: "/analytics", label: "Insights", icon: InsightsIcon },
 ];
 
