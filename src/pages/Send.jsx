@@ -12,6 +12,7 @@ export default function Send() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [mode, setMode] = useState("send"); // "send" | "request"
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [recipient, setRecipient] = useState(location.state?.recipient || null);
@@ -36,14 +37,40 @@ export default function Send() {
 
   const numericAmount = Number(amount) || 0;
   const { rate, fee, total } = calculateFee(numericAmount);
-  const insufficient = profile && total > profile.balance;
+  const insufficient = mode === "send" && profile && total > profile.balance;
 
-  function handleReviewSend(e) {
+  function switchMode(next) {
+    setMode(next);
+    setAmount("");
+    setNote("");
+  }
+
+  function handleReview(e) {
     e.preventDefault();
     if (!recipient) { toast("Choose a recipient first.", "warning"); return; }
     if (numericAmount <= 0) { toast("Enter an amount greater than 0.", "warning"); return; }
-    if (insufficient) { toast("Insufficient balance including fee.", "error"); return; }
-    setShowConfirm(true);
+    if (mode === "send" && insufficient) { toast("Insufficient balance including fee.", "error"); return; }
+
+    if (mode === "request") {
+      handleRequest();
+    } else {
+      setShowConfirm(true);
+    }
+  }
+
+  async function handleRequest() {
+    setSubmitting(true);
+    const { error } = await supabase.rpc("create_payment_request", {
+      p_target_id: recipient.id,
+      p_amount: numericAmount,
+      p_note: note.trim() || null,
+    });
+    setSubmitting(false);
+
+    if (error) { toast(error.message, "error"); return; }
+
+    toast(`Requested ${formatCredits(numericAmount)} CR from ${recipient.full_name || recipient.name}`, "success");
+    navigate("/history");
   }
 
   async function handleConfirmSend() {
@@ -68,12 +95,32 @@ export default function Send() {
 
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-xl font-semibold text-ink-100">Send credits</h1>
+      <h1 className="font-display text-xl font-semibold text-ink-100">
+        {mode === "send" ? "Send credits" : "Request credits"}
+      </h1>
+
+      {/* Mode toggle */}
+      <div className="flex gap-2">
+        {[
+          { key: "send", label: "Send" },
+          { key: "request", label: "Request" },
+        ].map((m) => (
+          <button
+            key={m.key}
+            onClick={() => switchMode(m.key)}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${mode === m.key ? "bg-mint-500 text-base-950" : "bg-base-800 text-ink-500 hover:text-ink-300"}`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
 
       {/* Step 1: Choose recipient */}
       {!recipient ? (
         <Card>
-          <p className="text-xs font-medium text-ink-500 uppercase tracking-widest mb-3">Find recipient</p>
+          <p className="text-xs font-medium text-ink-500 uppercase tracking-widest mb-3">
+            {mode === "send" ? "Find recipient" : "Request from"}
+          </p>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -103,7 +150,7 @@ export default function Send() {
           </div>
         </Card>
       ) : (
-        <form onSubmit={handleReviewSend} className="space-y-4">
+        <form onSubmit={handleReview} className="space-y-4">
           {/* Recipient chip */}
           <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-base-800 border border-base-700">
             <div className="flex items-center gap-3">
@@ -112,7 +159,7 @@ export default function Send() {
               </div>
               <div>
                 <p className="text-sm font-medium text-ink-100">{recipient.full_name || recipient.name}</p>
-                <p className="text-xs text-ink-500">Recipient</p>
+                <p className="text-xs text-ink-500">{mode === "send" ? "Recipient" : "Requesting from"}</p>
               </div>
             </div>
             <button type="button" onClick={() => { setRecipient(null); setQuery(""); setAmount(""); setNote(""); }} className="text-xs text-violet-400">Change</button>
@@ -169,8 +216,8 @@ export default function Send() {
             />
           </Card>
 
-          {/* Fee breakdown */}
-          {numericAmount > 0 && (
+          {/* Fee breakdown — only relevant for actual sends */}
+          {mode === "send" && numericAmount > 0 && (
             <Card className="!p-4 space-y-2">
               <Row label="Amount" value={`${formatCredits(numericAmount)} CR`} />
               <Row label={`Network fee (${(rate * 100).toFixed(1)}%)`} value={`${formatCredits(fee)} CR`} />
@@ -180,12 +227,24 @@ export default function Send() {
             </Card>
           )}
 
+          {mode === "request" && numericAmount > 0 && (
+            <Card className="!p-4">
+              <p className="text-xs text-ink-500">
+                {recipient.full_name || recipient.name} will see this request and can pay or decline it. No credits move until they approve.
+              </p>
+            </Card>
+          )}
+
           <Button
             type="submit"
             size="lg"
             disabled={submitting || numericAmount <= 0 || insufficient}
           >
-            {`Review send ${numericAmount > 0 ? formatCredits(numericAmount) + " CR" : ""}`}
+            {mode === "send"
+              ? `Review send ${numericAmount > 0 ? formatCredits(numericAmount) + " CR" : ""}`
+              : submitting
+              ? "Requesting…"
+              : `Request ${numericAmount > 0 ? formatCredits(numericAmount) + " CR" : ""}`}
           </Button>
         </form>
       )}
