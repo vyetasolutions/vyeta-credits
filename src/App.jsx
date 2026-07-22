@@ -24,6 +24,7 @@ import AdminSupport from "./pages/AdminSupport.jsx";
 
 // Component Imports
 import Shell from "./components/Shell.jsx";
+import InstallPrompt from "./components/InstallPrompt.jsx";
 
 function Loader() {
   return (
@@ -60,35 +61,40 @@ export default function App() {
   const { recoveryMode } = useAuth();
   
   return (
-    <Routes>
-      {/* Public / Auth Routes */}
-      <Route path="/login" element={<AuthGate><Login /></AuthGate>} />
-      <Route path="/signup" element={<AuthGate><Signup /></AuthGate>} />
-      <Route path="/forgot-password" element={<AuthGate><ForgotPassword /></AuthGate>} />
-      <Route path="/reset-password" element={
-        recoveryMode ? <ResetPassword /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      
-      {/* Protected User Routes */}
-      <Route path="/" element={<Protected><Dashboard /></Protected>} />
-      <Route path="/send" element={<Protected><Send /></Protected>} />
-      <Route path="/history" element={<Protected><History /></Protected>} />
-      <Route path="/contacts" element={<Protected><Contacts /></Protected>} />
-      <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
-      <Route path="/services" element={<Protected><Services /></Protected>} />
-      <Route path="/load-credits" element={<Protected><LoadCredits /></Protected>} />
-      <Route path="/support" element={<Protected><Support /></Protected>} />
-      
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
-      <Route path="/admin/services" element={<AdminOnly><AdminServices /></AdminOnly>} />
-      <Route path="/admin/payments" element={<AdminOnly><AdminPayments /></AdminOnly>} />
-      <Route path="/admin/support" element={<AdminOnly><AdminSupport /></AdminOnly>} />
-      
-      {/* Catch-all fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        {/* Public / Auth Routes */}
+        <Route path="/login" element={<AuthGate><Login /></AuthGate>} />
+        <Route path="/signup" element={<AuthGate><Signup /></AuthGate>} />
+        <Route path="/forgot-password" element={<AuthGate><ForgotPassword /></AuthGate>} />
+        <Route path="/reset-password" element={
+          recoveryMode ? <ResetPassword /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        
+        {/* Protected User Routes */}
+        <Route path="/" element={<Protected><Dashboard /></Protected>} />
+        <Route path="/send" element={<Protected><Send /></Protected>} />
+        <Route path="/history" element={<Protected><History /></Protected>} />
+        <Route path="/contacts" element={<Protected><Contacts /></Protected>} />
+        <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
+        <Route path="/services" element={<Protected><Services /></Protected>} />
+        <Route path="/load-credits" element={<Protected><LoadCredits /></Protected>} />
+        <Route path="/support" element={<Protected><Support /></Protected>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
+        <Route path="/admin/services" element={<AdminOnly><AdminServices /></AdminOnly>} />
+        <Route path="/admin/payments" element={<AdminOnly><AdminPayments /></AdminOnly>} />
+        <Route path="/admin/support" element={<AdminOnly><AdminSupport /></AdminOnly>} />
+        
+        {/* Catch-all fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Global PWA Installation Prompt */}
+      <InstallPrompt />
+    </>
   );
 }
