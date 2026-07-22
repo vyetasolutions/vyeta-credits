@@ -2,63 +2,39 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
-import { Card, Button, Pill } from "../components/ui.jsx";
-import TransactionRow from "../components/TransactionRow.jsx";
-import { SkeletonBalance, SkeletonCard } from "../components/Skeleton.jsx";
-import { formatCredits, formatDate } from "../lib/format.js";
+import { Button } from "../components/ui.jsx";
 import LinkedPlatforms from "../components/LinkedPlatforms.jsx";
+import { SkeletonBalance } from "../components/Skeleton.jsx";
+import { formatCredits } from "../lib/format.js";
 
 export default function Dashboard() {
   const { profile, session } = useAuth();
   const navigate = useNavigate();
-  const [recent, setRecent] = useState([]);
-  const [activeSubs, setActiveSubs] = useState([]);
   const [topContacts, setTopContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session?.user?.id) return;
     let active = true;
 
-    async function load() {
-      const [{ data: txs }, { data: subs }] = await Promise.all([
-        supabase
-          .from("transactions_view")
-          .select("*")
-          .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("subscriptions_view")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .eq("status", "active")
-          .order("started_at", { ascending: false }),
-      ]);
+    async function loadContacts() {
+      const { data: txs } = await supabase
+        .from("transactions_view")
+        .select("*")
+        .eq("sender_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
       if (!active) return;
-      const txData = txs || [];
-      setRecent(txData);
-      setActiveSubs(subs || []);
-
-      // Build top contacts from recent sends
       const contactMap = {};
-      txData.filter(t => t.sender_id === session.user.id).forEach(t => {
+      (txs || []).forEach((t) => {
         const k = t.receiver_id;
         if (!contactMap[k]) contactMap[k] = { id: k, name: t.receiver_name };
       });
       setTopContacts(Object.values(contactMap).slice(0, 3));
-      setLoading(false);
     }
 
-    load();
-
-    const ch = supabase
-      .channel("dashboard-" + session.user.id)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, load)
-      .subscribe();
-
-    return () => { active = false; supabase.removeChannel(ch); };
+    loadContacts();
+    return () => { active = false; };
   }, [session?.user?.id]);
 
   return (
@@ -75,18 +51,12 @@ export default function Dashboard() {
             <span className="text-base text-ink-500 ml-2 font-normal">CR</span>
           </p>
 
-          {/* 1 CR = 1 ZMW, structurally - just show the split between
-              spendable-only bonus CR and real-money top-up CR */}
-          <div className="flex items-center gap-1.5 mt-2">
-            <span className="text-xs text-ink-500">
-              K{formatCredits(profile.cashable_balance ?? 0)} available to load out
-            </span>
-          </div>
-          {Number(profile.balance) > Number(profile.cashable_balance ?? 0) && (
-            <p className="text-[11px] text-ink-700 mt-0.5">
-              Remaining {formatCredits(Number(profile.balance) - Number(profile.cashable_balance ?? 0))} CR is bonus/promotional — spendable across Vyeta, not withdrawable.
-            </p>
-          )}
+          <p className="text-xs text-ink-500 mt-2">
+            K{formatCredits(profile.cashable_balance ?? 0)} available to load out
+            {Number(profile.balance) > Number(profile.cashable_balance ?? 0) && (
+              <> · {formatCredits(Number(profile.balance) - Number(profile.cashable_balance ?? 0))} CR bonus (spendable only)</>
+            )}
+          </p>
 
           <div className="flex gap-3 mt-5">
             <Link to="/send" className="flex-1">
@@ -104,11 +74,6 @@ export default function Dashboard() {
                 </svg>
                 Load credits
               </Button>
-            </Link>
-          </div>
-          <div className="mt-3">
-            <Link to="/services" className="block">
-              <Button variant="ghost" size="sm">Browse Services</Button>
             </Link>
           </div>
         </div>
@@ -135,54 +100,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Active services */}
-      {activeSubs.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-ink-500 uppercase tracking-widest">Active services</p>
-            <Link to="/services" className="text-xs text-violet-400">Manage</Link>
-          </div>
-          <Card className="!p-0 overflow-hidden">
-            {activeSubs.map((s) => (
-              <div key={s.id} className="flex items-center justify-between px-5 py-3 border-b border-base-700/60 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-ink-100">{s.service_name}</p>
-                  <p className="text-xs text-ink-500">
-                    {s.current_period_end ? `Renews ${formatDate(s.current_period_end)}` : "One-time"}
-                  </p>
-                </div>
-                <Pill tone="mint">Active</Pill>
-              </div>
-            ))}
-          </Card>
-        </div>
-      )}
-
       {/* Linked platforms */}
       <LinkedPlatforms />
-
-      {/* Recent activity */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-ink-500 uppercase tracking-widest">Recent activity</p>
-          <Link to="/history" className="text-xs text-violet-400">See all</Link>
-        </div>
-        {loading ? <SkeletonCard rows={3} /> : (
-          <Card className="!p-0 overflow-hidden">
-            {recent.length === 0 ? (
-              <div className="text-center py-8 px-5">
-                <p className="text-sm font-medium text-ink-300">No transactions yet</p>
-                <p className="text-xs text-ink-500 mt-1">Send credits to someone to see activity here.</p>
-              </div>
-            ) : (
-              <div className="px-5">
-                {recent.map((tx) => <TransactionRow key={tx.id} tx={tx} myId={session.user.id} />)}
-              </div>
-            )}
-          </Card>
-        )}
-      </div>
     </div>
   );
 }
-
