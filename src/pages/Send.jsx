@@ -16,7 +16,9 @@ export default function Send() {
   const [results, setResults] = useState([]);
   const [recipient, setRecipient] = useState(location.state?.recipient || null);
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (!query.trim() || recipient) { setResults([]); return; }
@@ -36,18 +38,23 @@ export default function Send() {
   const { rate, fee, total } = calculateFee(numericAmount);
   const insufficient = profile && total > profile.balance;
 
-  async function handleSend(e) {
+  function handleReviewSend(e) {
     e.preventDefault();
     if (!recipient) { toast("Choose a recipient first.", "warning"); return; }
     if (numericAmount <= 0) { toast("Enter an amount greater than 0.", "warning"); return; }
     if (insufficient) { toast("Insufficient balance including fee.", "error"); return; }
+    setShowConfirm(true);
+  }
 
+  async function handleConfirmSend() {
     setSubmitting(true);
     const { error } = await supabase.rpc("send_credits", {
       p_receiver_id: recipient.id,
       p_amount: numericAmount,
+      p_note: note.trim() || null,
     });
     setSubmitting(false);
+    setShowConfirm(false);
 
     if (error) {
       toast(error.message.replace("Insufficient", "Not enough credits"), "error");
@@ -96,7 +103,7 @@ export default function Send() {
           </div>
         </Card>
       ) : (
-        <form onSubmit={handleSend} className="space-y-4">
+        <form onSubmit={handleReviewSend} className="space-y-4">
           {/* Recipient chip */}
           <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-base-800 border border-base-700">
             <div className="flex items-center gap-3">
@@ -108,7 +115,7 @@ export default function Send() {
                 <p className="text-xs text-ink-500">Recipient</p>
               </div>
             </div>
-            <button type="button" onClick={() => { setRecipient(null); setQuery(""); setAmount(""); }} className="text-xs text-violet-400">Change</button>
+            <button type="button" onClick={() => { setRecipient(null); setQuery(""); setAmount(""); setNote(""); }} className="text-xs text-violet-400">Change</button>
           </div>
 
           {/* Big amount input */}
@@ -151,6 +158,17 @@ export default function Send() {
             </div>
           </Card>
 
+          {/* Optional note */}
+          <Card>
+            <p className="text-xs font-medium text-ink-500 uppercase tracking-widest mb-3">Note (optional)</p>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What's this for?"
+              maxLength={140}
+            />
+          </Card>
+
           {/* Fee breakdown */}
           {numericAmount > 0 && (
             <Card className="!p-4 space-y-2">
@@ -167,10 +185,70 @@ export default function Send() {
             size="lg"
             disabled={submitting || numericAmount <= 0 || insufficient}
           >
-            {submitting ? "Sending…" : `Send ${numericAmount > 0 ? formatCredits(numericAmount) + " CR" : "credits"}`}
+            {`Review send ${numericAmount > 0 ? formatCredits(numericAmount) + " CR" : ""}`}
           </Button>
         </form>
       )}
+
+      {showConfirm && (
+        <ConfirmSendModal
+          recipient={recipient}
+          amount={numericAmount}
+          fee={fee}
+          total={total}
+          note={note}
+          submitting={submitting}
+          onCancel={() => setShowConfirm(false)}
+          onConfirm={handleConfirmSend}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmSendModal({ recipient, amount, fee, total, note, submitting, onCancel, onConfirm }) {
+  const name = recipient.full_name || recipient.name;
+  const maskedEmail = recipient.email
+    ? recipient.email.replace(/^(.{1,2}).*(@.*)$/, (_, a, b) => `${a}***${b}`)
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center p-4">
+      <Card className="w-full max-w-sm animate-riseIn">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-base font-semibold text-ink-100">Confirm send</h3>
+          <button onClick={onCancel} className="text-ink-500 hover:text-ink-300 text-sm">✕</button>
+        </div>
+
+        <div className="flex items-center gap-3 mb-4 px-3 py-3 rounded-xl bg-base-800 border border-base-700">
+          <div className={`h-10 w-10 rounded-full flex items-center justify-center font-display text-xs shrink-0 ${avatarColor(name)}`}>
+            {initials(name)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-100 truncate">{name}</p>
+            {maskedEmail && <p className="text-xs text-ink-500 truncate">{maskedEmail}</p>}
+          </div>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <Row label="Amount" value={`${formatCredits(amount)} CR`} />
+          <Row label="Network fee" value={`${formatCredits(fee)} CR`} />
+          <div className="h-px bg-base-700" />
+          <Row label="Total deducted" value={`${formatCredits(total)} CR`} bold />
+          {note && <Row label="Note" value={note} />}
+        </div>
+
+        <p className="text-[11px] text-flame-400 mb-4">
+          Please confirm this is the right recipient. Vyeta Credit transfers are final and cannot be reversed.
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Button variant="secondary" disabled={submitting} onClick={onCancel}>Cancel</Button>
+          <Button disabled={submitting} onClick={onConfirm}>
+            {submitting ? "Sending…" : "Confirm send"}
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }
