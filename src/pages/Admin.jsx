@@ -107,6 +107,9 @@ export default function Admin() {
           <Link to="/admin/services" className="text-xs text-violet-400 font-medium">
             Services →
           </Link>
+          <Link to="/admin/support" className="text-xs text-mint-400 font-medium">
+            Support →
+          </Link>
         </div>
       </div>
 
@@ -295,4 +298,3 @@ function ManageUserModal({ user, onClose, onDone }) {
     </div>
   );
 }
-
