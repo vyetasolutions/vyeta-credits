@@ -1,6 +1,8 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
+
+// Page Imports
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -17,7 +19,12 @@ import Admin from "./pages/Admin.jsx";
 import AdminServices from "./pages/AdminServices.jsx";
 import AdminPayments from "./pages/AdminPayments.jsx";
 import LoadCredits from "./pages/LoadCredits.jsx";
+import Support from "./pages/Support.jsx";
+import AdminSupport from "./pages/AdminSupport.jsx";
+
+// Component Imports
 import Shell from "./components/Shell.jsx";
+
 function Loader() {
   return (
     <div className="h-screen w-full flex items-center justify-center bg-base-950">
@@ -25,12 +32,14 @@ function Loader() {
     </div>
   );
 }
+
 function Protected({ children }) {
   const { session, loading } = useAuth();
   if (loading) return <Loader />;
   if (!session) return <Navigate to="/login" replace />;
   return <Shell>{children}</Shell>;
 }
+
 function AdminOnly({ children }) {
   const { session, profile, loading } = useAuth();
   if (loading) return <Loader />;
@@ -38,6 +47,7 @@ function AdminOnly({ children }) {
   if (profile?.role !== "admin") return <Navigate to="/" replace />;
   return <Shell>{children}</Shell>;
 }
+
 function AuthGate({ children }) {
   const { session, loading, recoveryMode } = useAuth();
   if (loading) return <Loader />;
@@ -45,10 +55,13 @@ function AuthGate({ children }) {
   if (session) return <Navigate to="/" replace />;
   return children;
 }
+
 export default function App() {
   const { recoveryMode } = useAuth();
+  
   return (
     <Routes>
+      {/* Public / Auth Routes */}
       <Route path="/login" element={<AuthGate><Login /></AuthGate>} />
       <Route path="/signup" element={<AuthGate><Signup /></AuthGate>} />
       <Route path="/forgot-password" element={<AuthGate><ForgotPassword /></AuthGate>} />
@@ -57,6 +70,8 @@ export default function App() {
       } />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      
+      {/* Protected User Routes */}
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/send" element={<Protected><Send /></Protected>} />
       <Route path="/history" element={<Protected><History /></Protected>} />
@@ -64,11 +79,16 @@ export default function App() {
       <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
       <Route path="/services" element={<Protected><Services /></Protected>} />
       <Route path="/load-credits" element={<Protected><LoadCredits /></Protected>} />
+      <Route path="/support" element={<Protected><Support /></Protected>} />
+      
+      {/* Admin Routes */}
       <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
       <Route path="/admin/services" element={<AdminOnly><AdminServices /></AdminOnly>} />
       <Route path="/admin/payments" element={<AdminOnly><AdminPayments /></AdminOnly>} />
+      <Route path="/admin/support" element={<AdminOnly><AdminSupport /></AdminOnly>} />
+      
+      {/* Catch-all fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
-
