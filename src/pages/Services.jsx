@@ -84,7 +84,7 @@ export default function Services() {
       ) : (
         <div className="space-y-3">
           {partners.map((p) => (
-            
+<a            
               key={p.id}
               href={p.url}
               target="_blank"
